@@ -12,6 +12,7 @@ Simple-GUI is a declarative tool for defining GUI in Common Lisp. It's more conv
 Then we will have a look at some examples. The first example is a simple dialog that says hello to the given name:
 [[./examples/greeting.png]]
 [[./examples/greeting1.png]]
+
 The following is the source code:
 #+BEGIN_SRC lisp
 (defun main ()
@@ -58,4 +59,5 @@ There are some other usages of Simple-GUI not mentioned above:
 - To create a non gui Qt Element, for example, QUrl, use ~(q-new q-url "http://www.example.com/")~.
 - Use ~(q-connect object :clicked :bool #'func)~ or similar ~q-connect*~ macro to connect signal after create the gui element.
 - Use ~it~ to refer to the current GUI element inside a GUI element constructing macro.
-- You may refer to [[[[http://doc.qt.io/qt-4.8/index.html]]] [Qt 4.8 Official Doc]] to search for Qt classes and methods API.
+- You may refer to [[http://doc.qt.io/qt-4.8/index.html][Qt 4.8 Official Doc]] to search for Qt classes and methods API.
+- Some of Qt method names are conflict with symbols in common-lisp package, so they are renamed from ~foo~ to ~qfoo~, they are indicated in ~simple-gui::*convert-special-cases*~.
