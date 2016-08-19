@@ -1,0 +1,61 @@
+* Simple-GUI
+
+Simple-GUI is a declarative tool for defining GUI in Common Lisp. It's more convenient than other Common Lisp GUI wrapper libraries when writing simple gui programs. Currently, it use CommonQt as its backend so it can run on both Linux, Windows and Mac with actually GUI built with the Qt Library. It's quite staightforward to use. Start with loading the Simple-GUI library:
+#+BEGIN_SRC lisp
+(ql:quickload :simple-gui)
+;;; For easier use in small GUI applications, we recommend use these packages:
+;;  simple-gui for q-application and any GUI defining macros
+(use-package :simple-gui)
+;;  q- for all CommonQt methods, rename in a lispy way
+(use-package :q-)
+#+END_SRC
+Then we will have a look at some examples. The first example is a simple dialog that says hello to the given name:
+[[./examples/greeting.png]]
+[[./examples/greeting1.png]]
+The following is the source code:
+#+BEGIN_SRC lisp
+(defun main ()
+  (q-application)
+  (q-widget main
+    (:set
+     (:window-title "What's your name?")
+     (:layout
+      (q-h-box-layout -
+	(:add (q-line-edit name)
+	      (q-push-button button
+		(:set (:text "OK"))
+		(:connect (:clicked
+			   #'(lambda ()
+			       (information 'q-message-box (gui main) "Simple GUI"
+					    (concatenate 'string
+							 "Hello, "
+							 (text (gui name)))))))))))))
+  (show (gui main))
+  (exec (q-application)))
+#+END_SRC
+Just run (main) in REPL will see the result.
+In the example above, we can see using Simple-GUI is quite simple to create simple GUI programs. Only things need to know:
+- Use ~(q-application)~ first to create Qt Application instance, and refer to the single Qt Application instance the same way in program.
+- Use ~q-widget~, ~q-push-button~ etc. to create a GUI element, the name mapping rule is ~QFooBar => q-foo-bar~. After this is a name given to this GUI element, which is in a different name space with common lisp variables and functions. If you don't need to refer to this name after creating it, such as a layout, you can specify its name as ~-~.
+- Use ~:set~ inside a GUI element to set initial property of this element. For example, the ~(:layout ...)~ inside ~(:set ...)~ of ~(q-widget main ...)~ is use to set the layout of q-widget named main. The general rule is ~(:set (:layout ...))~ will be convert to a ~set-layout~ method call.
+- Use ~:add~ to add child widget or layout to parent widget or layout. Only subclass of ~q-widget~ and ~q-layout~ can be add in this way. It can add any number of child widget or layout. In ~(:add obj1 obj2 ...)~, each ~obj~ can either be a new object defined by any Qt GUI elements like ~q-h-box-layout~ or a existed Qt GUI element.
+- To refer to any existed Qt GUI element, use ~(gui object-name)~.
+- Use ~:connect~ or ~:con~ to connect a given Qt signal to a function, which can be a lambda or a function define later. Simple-GUI does't provide a way to connect a Qt signal to a Qt slot, since in CLOS, methods (Qt slot is a special kind of method) don't belong to class or instance, but a dependent concept. Restrict a Qt signal can only be connected to a function doesn't restrict the functionality of Qt. If the original Qt signal takes arguments, such as ~clicked(bool, int)~, you can use the connect as ~(:connect (:clicked :bool :int) #'func)~. The Qt signal name conversion is the same as Qt methods, see the next instruction.
+- Call Qt method in the same way as Common Lisp function or method. In fact, all Qt methods are in the ~q-~ package. Put the object that this Qt method is call on in the first place of arguments and then other arguments. If this method is a static method, like ~(information ...)~ as shown above, you should pass the Qt class name as the first argument, in the previous example, is ~q-message-box~. The Qt method name is converted in this way: ~fooBar => foo-bar~.
+
+You may have a look on other examples in the examples directory. ~web.lisp~ is a minimum Qt WebView demo, Simple-GUI provides all Qt GUI elements in the same way to use as above, including the ~q-web-view~ and the Qt OpenGL module. ~cards.lisp~ is a simple game, which require you to pick up cards with same picture to eliminate them (you need to run it after entering the examples directory, or press C-c C-~ in Emacs with slime after open the source)
+The ~web.lisp~ example:
+
+[[./examples/web.png]]
+
+The ~cards.lisp~ example:
+
+[[./examples/cards.png]]
+
+There are some other usages of Simple-GUI not mentioned above:
+- Use a ~:connect*~ to connect the Qt signal but can pass an extra data to the function. For example, ~(:connect* (:clicked) #'func data)~, the function connected to ~func~, which takes an additional argument as its first argument and then other arguments as same as when connect with ~connect~.
+- To use a Qt Enum, ~Foo::FooBar~ can be refered to as ~foo/foo-bar~, to compare Qt Enums, use ~(qt:enum= enum1 enum2)~.
+- To create a non gui Qt Element, for example, QUrl, use ~(q-new q-url "http://www.example.com/")~.
+- Use ~(q-connect object :clicked :bool #'func)~ or similar ~q-connect*~ macro to connect signal after create the gui element.
+- Use ~it~ to refer to the current GUI element inside a GUI element constructing macro.
+- You may refer to [[[[http://doc.qt.io/qt-4.8/index.html]]] [Qt 4.8 Official Doc]] to search for Qt classes and methods API.
